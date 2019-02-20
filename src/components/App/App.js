@@ -15,11 +15,7 @@ export default class App extends Component {
     maxId = 100;
 
     state = {
-        todoData: [
-            this.createTodoItem('Drink Coffee'),
-            this.createTodoItem('Do the Aliks site'),
-            this.createTodoItem('Renkas birthday'),
-        ],
+        todoData: [],
         todoList: null,
         term: '',
         filter: 'all' //active, all, done
@@ -38,7 +34,6 @@ export default class App extends Component {
         if (!this.state.todoList) {
             this.loadTodos();
         }
-        console.log('list =', this.state.todoList)
     }
 
     loadTodos = async () => {
@@ -46,25 +41,14 @@ export default class App extends Component {
             const res = await fetch(apiUrl + apiRoutes.todo);
             const todoList = await res.json();
 
-            this.setState({todoList});
+            this.setState(({todoData}) => ({
+                todoData: [...todoData, ...todoList]
+            }));
 
-            return todoList;
         } catch (error) {
             alert(error.message);
         }
     };
-    //
-    // loadTodos = () => {
-    //     fetch(apiUrl + apiRoutes.todo)
-    //         .then(res => res.json())
-    //         .then(res => {
-    //             this.setState({todoList: res})
-    //         })
-    //         .catch(error => {
-    //             alert('Ошибка при получении списка задач');
-    //             console.error(error);
-    //         });
-    // }
 
     deleteItem = (id) => {
         this.setState(({todoData}) => {
@@ -80,24 +64,71 @@ export default class App extends Component {
                 todoData: newArray
             }
         })
+
+        const requestUrl = apiUrl + apiRoutes.todo + `?id=${id}`;
+        const {todoList} = this.state;
+
+        fetch(requestUrl, {method: 'DELETE'})
+            .then(res => {
+                const {status} = res;
+
+                if (status < 200 || status > 299) {
+                    throw new Error(`Ошибка при удалении! Код: ${status}`);
+                }
+
+                const cleanTodoList = todoList.filter(todo => todo.id !== id);
+                this.setState({todoList: cleanTodoList});
+
+                alert(`Задача с id: ${id} удалена!`);
+            })
+            .catch(error => {
+                console.log('catch error');
+                console.error(error);
+            });
     }
 
     onAddItem = (text) => {
 
         const newItem = this.createTodoItem(text)
 
-        this.setState(({todoData}) => {
+        this.setState(({ todoData }) => {
 
             const newArray = [
                 ...todoData,
                 newItem
             ]
 
-            return {
-                todoData: newArray
-            }
+            // return {
+            //     todoData: newArray
+            // }
 
         })
+
+        const requestUrl = apiUrl + apiRoutes.todo + `?label=${label}`;
+        fetch(requestUrl, {method: 'POST'})
+            .then(res => {
+                const { status } = res;
+
+                if (status < 200 || status > 299) {
+                    throw new Error(`Ошибка при добавлении задачи. Код ${status}`);
+                }
+
+                return res.json();
+            })
+            .then(addedTodo => {
+                addTodoCallback(addedTodo);
+                this.setState({
+                    label: '',
+                    important: false,
+                    done: false,
+                    messages: 'Задача успешно добавлена!',
+                    error: '',
+                });
+            })
+            .catch(error => {
+                console.error(error);
+                this.setState({error: error.message, messages: ''});
+            });
     }
 
     toggleProperty(arr, id, propName) {
