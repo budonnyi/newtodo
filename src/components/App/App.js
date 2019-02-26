@@ -20,14 +20,13 @@ export default class App extends Component {
         filter: 'all' //active, all, done
     };
 
-    createTodoItem(label) {
-        return {
-            label: label,
-            important: false,
-            done: false,
-            id: this.maxId++
-        };
-    }
+    // createTodoItem(label) {
+    //     return {
+    //         label: label,
+    //         important: false,
+    //         done: false,
+    //     };
+    // }
 
     componentDidMount() {
         if (!this.state.todoList) {
@@ -38,7 +37,7 @@ export default class App extends Component {
     loadTodos = async () => {
         try {
             const res = await fetch(apiUrl + apiRoutes.todo);
-            const todoList = await res.json();
+            const { data: todoList } = await res.json();
 
             if (!Array.isArray(todoList)) {
                 throw new Error('loadTodos: todoList should be an array');
@@ -52,11 +51,17 @@ export default class App extends Component {
         }
     };
 
-    deleteItem = async todoId => {
+    remove = async todoLabel => {
         try {
-            const requestUrl = `${apiUrl}${apiRoutes.todo}?id=${todoId}`;
+            const requestUrl = `${apiUrl}${apiRoutes.todo}`;
 
-            const response = await fetch(requestUrl, { method: 'DELETE' });
+            const response = await fetch(requestUrl, {
+                method: 'DELETE',
+                headers: {
+                    'content-type': 'application/json'
+                } ,
+                body: JSON.stringify({label: todoLabel})
+            });
 
             if (!response.ok) {
                 throw new Error(`Ошибка при удалении! Код: ${response.status}`);
@@ -64,11 +69,11 @@ export default class App extends Component {
 
             this.setState(
                 ({ todoData }) => ({
-                    todoData: todoData.filter(({ id }) => todoId !== id)
+                    todoData: todoData.filter(({ label }) => label !== todoLabel)
                 }),
-                () => {
-                    alert(`Задача с id: ${todoId} удалена!`);
-                }
+                // () => {
+                //     alert(`Задача с label: ${todoLabel} удалена!`);
+                // }
             );
         } catch (error) {
             console.log('catch error');
@@ -76,16 +81,22 @@ export default class App extends Component {
         }
     };
 
-    onAddItem = async text => {
+    onAddItem = async label => {
         try {
-            const newItem = this.createTodoItem(text);
+            // const newItem = this.createTodoItem(label);
+            //
+            // this.setState(({ todoData }) => ({
+            //     todoData: [...todoData, newItem]
+            // }));
 
-            this.setState(({ todoData }) => ({
-                todoData: [...todoData, newItem]
-            }));
-
-            const requestUrl = `${apiUrl}${apiRoutes.todo}?label=${text}`;
-            const response = await fetch(requestUrl, { method: 'POST' });
+            const requestUrl = `${apiUrl}${apiRoutes.todo}`;
+            const response = await fetch(requestUrl, {
+                method: 'POST',
+                headers: {
+                    'content-type':'application/json'
+                },
+                body: JSON.stringify({label})
+            });
 
             if (!response.ok) {
                 throw new Error(
@@ -93,15 +104,11 @@ export default class App extends Component {
                 );
             }
 
-            const addedTodo = await response.json();
+            const {data: todo} = await response.json();
             // addTodoCallback(addedTodo); ← этого метода вообще нет.
-            this.setState({
-                label: '',
-                important: false,
-                done: false,
-                messages: 'Задача успешно добавлена!',
-                error: ''
-            });
+            this.setState(({todoData}) => ({
+                todoData: [todo, ...todoData]
+            }));
         } catch (error) {
             console.error(error);
             this.setState({ error: error.message, messages: '' });
@@ -140,6 +147,8 @@ export default class App extends Component {
         if (term.length === '') {
             return items;
         }
+
+        console.log(items)
 
         return items.filter(item => {
             return item.label.toLowerCase().indexOf(term.toLowerCase()) > -1;
@@ -190,7 +199,7 @@ export default class App extends Component {
 
                 <TodoList
                     todos={visibleItems}
-                    onDeleted={this.deleteItem}
+                    remove={this.remove}
                     onToggleImportant={this.onToggleImportant}
                     onToggleDone={this.onToggleDone}
                 />

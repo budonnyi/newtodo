@@ -1,5 +1,5 @@
-export const apiUrl = 'http://backend.budennyi.com';
+export const apiUrl = 'http://18.185.64.216';
 
 export const apiRoutes = {
-    todo: '/todo'
+    todo: '/api/todos'
 };
