@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 // import ReactDOM from 'react-dom'
 
 import AppHeader from '../app-header';
@@ -6,7 +6,7 @@ import SearchPanel from '../search-panel';
 import TodoList from '../todo-list';
 import ItemStatusFilter from '../item-status-filter';
 import ItemAddForm from '../item-add-form';
-import { apiUrl, apiRoutes } from '../../apiConfig';
+import {apiUrl, apiRoutes} from '../../apiConfig';
 
 import './App.css';
 
@@ -37,13 +37,13 @@ export default class App extends Component {
     loadTodos = async () => {
         try {
             const res = await fetch(apiUrl + apiRoutes.todo);
-            const { data: todoList } = await res.json();
+            const {data: todoList} = await res.json();
 
             if (!Array.isArray(todoList)) {
                 throw new Error('loadTodos: todoList should be an array');
             }
 
-            this.setState(({ todoData }) => ({
+            this.setState(({todoData}) => ({
                 todoData: [...todoData, ...todoList]
             }));
         } catch (error) {
@@ -59,7 +59,7 @@ export default class App extends Component {
                 method: 'DELETE',
                 headers: {
                     'content-type': 'application/json'
-                } ,
+                },
                 body: JSON.stringify({label: todoLabel})
             });
 
@@ -68,8 +68,8 @@ export default class App extends Component {
             }
 
             this.setState(
-                ({ todoData }) => ({
-                    todoData: todoData.filter(({ label }) => label !== todoLabel)
+                ({todoData}) => ({
+                    todoData: todoData.filter(({label}) => label !== todoLabel)
                 }),
                 // () => {
                 //     alert(`Задача с label: ${todoLabel} удалена!`);
@@ -93,7 +93,7 @@ export default class App extends Component {
             const response = await fetch(requestUrl, {
                 method: 'POST',
                 headers: {
-                    'content-type':'application/json'
+                    'content-type': 'application/json'
                 },
                 body: JSON.stringify({label})
             });
@@ -111,24 +111,52 @@ export default class App extends Component {
             }));
         } catch (error) {
             console.error(error);
-            this.setState({ error: error.message, messages: '' });
+            this.setState({error: error.message, messages: ''});
         }
     };
 
-    toggleProperty(arr, id, propName) {
-        const idx = arr.findIndex(el => el.id === id);
+    toggleProperty = async (arr, id, propName) => {
+        try {
 
-        const oldItem = arr[idx];
-        const newItem = {
-            ...oldItem,
-            [propName]: !oldItem[propName]
-        };
+            const idx = arr.findIndex(el => el._id === id);
 
-        return [...arr.slice(0, idx), newItem, ...arr.slice(idx + 1)];
+            const oldItem = arr[idx];
+
+            const requestUrl = `${apiUrl}${apiRoutes.todo}`;
+            const response = await fetch(requestUrl, {
+                method: 'PUT',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({oldItem})
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    `Ошибка при добавлении задачи. Код ${response.status}`
+                );
+            }
+
+            const {data: todo} = await response.json();
+
+            // addTodoCallback(addedTodo); ← этого метода вообще нет.
+            this.setState(({todoData}) => ({
+                todoData: [todo, ...todoData]
+            }));
+            const newItem = {
+                ...oldItem,
+                [propName]: !oldItem[propName]
+            };
+
+            return [...arr.slice(0, idx), newItem, ...arr.slice(idx + 1)];
+        } catch (error) {
+            console.error(error);
+            this.setState({error: error.message, messages: ''});
+        }
     }
 
     onToggleImportant = id => {
-        this.setState(({ todoData }) => {
+        this.setState(({todoData}) => {
             return {
                 todoData: this.toggleProperty(todoData, id, 'important')
             };
@@ -136,7 +164,7 @@ export default class App extends Component {
     };
 
     onToggleDone = id => {
-        this.setState(({ todoData }) => {
+        this.setState(({todoData}) => {
             return {
                 todoData: this.toggleProperty(todoData, id, 'done')
             };
@@ -148,15 +176,13 @@ export default class App extends Component {
             return items;
         }
 
-        console.log(items)
-
         return items.filter(item => {
             return item.label.toLowerCase().indexOf(term.toLowerCase()) > -1;
         });
     }
 
     onSearchChange = term => {
-        this.setState({ term });
+        this.setState({term});
     };
 
     filter(items, filter) {
@@ -173,11 +199,11 @@ export default class App extends Component {
     }
 
     onFilterChange = filter => {
-        this.setState({ filter });
+        this.setState({filter});
     };
 
     render() {
-        const { todoData, term, filter } = this.state;
+        const {todoData, term, filter} = this.state;
 
         const visibleItems = this.filter(this.search(todoData, term), filter);
 
@@ -187,10 +213,10 @@ export default class App extends Component {
 
         return (
             <div className="todo-app">
-                <AppHeader toDo={todoCount} done={doneCount} />
+                <AppHeader toDo={todoCount} done={doneCount}/>
 
                 <div className="top-panel d-flex">
-                    <SearchPanel onSearchChange={this.onSearchChange} />
+                    <SearchPanel onSearchChange={this.onSearchChange}/>
                     <ItemStatusFilter
                         filter={filter}
                         onFilterChange={this.onFilterChange}
@@ -204,7 +230,7 @@ export default class App extends Component {
                     onToggleDone={this.onToggleDone}
                 />
 
-                <ItemAddForm onAddItem={this.onAddItem} />
+                <ItemAddForm onAddItem={this.onAddItem}/>
             </div>
         );
     }

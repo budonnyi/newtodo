@@ -23,6 +23,7 @@ const TodoList = ({
                     {...itemProps}
 
                     remove={remove}
+                    // onToggleImportant={() => onToggleImportant(_id)}
                     onToggleImportant={() => onToggleImportant(_id)}
                     onToggleDone={() => onToggleDone(_id)}
                     // label={item.label}

@@ -35,7 +35,7 @@ export default class TodoListItem extends Component {
             label,
             onToggleImportant,
             onToggleDone, important, done
-        } = this.props
+        } = this.props;
 
         // const {done, important} = this.state
 
