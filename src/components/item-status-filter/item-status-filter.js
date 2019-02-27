@@ -4,15 +4,14 @@ import './item-status-filter.css'
 export default class ItemStatusFilter extends Component {
 
     buttons = [
-        { name: 'all', label: 'All'},
-        { name: 'active', label: 'Active'},
-        { name: 'done', label: 'Done'},
+        {name: 'all', label: 'Все'},
+        {name: 'active', label: 'Сделать'},
+        {name: 'done', label: 'Готово'},
     ]
 
-    render () {
+    render() {
 
-        const { filter, onFilterChange } = this.props
-
+        const {filter, onFilterChange} = this.props
 
         const buttons = this.buttons.map(({name, label}) => {
 
@@ -24,14 +23,14 @@ export default class ItemStatusFilter extends Component {
                 <button type='button'
                         className={`btn ${clazz}`}
                         key={name}
-                        onClick = {() => onFilterChange( name )}
+                        onClick={() => onFilterChange(name)}
                 >{label}</button>
             )
         })
 
         return (
             <div className='btn-group'>
-                { buttons }
+                {buttons}
             </div>
         )
     }
