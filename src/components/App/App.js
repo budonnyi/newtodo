@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 // import ReactDOM from 'react-dom'
 
 import AppHeader from '../app-header';
@@ -6,7 +6,7 @@ import SearchPanel from '../search-panel';
 import TodoList from '../todo-list';
 import ItemStatusFilter from '../item-status-filter';
 import ItemAddForm from '../item-add-form';
-import {apiUrl, apiRoutes} from '../../apiConfig';
+import { apiUrl, apiRoutes } from '../../apiConfig';
 
 import './App.css';
 
@@ -37,13 +37,13 @@ export default class App extends Component {
     loadTodos = async () => {
         try {
             const res = await fetch(apiUrl + apiRoutes.todo);
-            const {data: todoList} = await res.json();
+            const { data: todoList } = await res.json();
 
             if (!Array.isArray(todoList)) {
                 throw new Error('loadTodos: todoList should be an array');
             }
 
-            this.setState(({todoData}) => ({
+            this.setState(({ todoData }) => ({
                 todoData: [...todoData, ...todoList]
             }));
         } catch (error) {
@@ -60,7 +60,7 @@ export default class App extends Component {
                 headers: {
                     'content-type': 'application/json'
                 },
-                body: JSON.stringify({label: todoLabel})
+                body: JSON.stringify({ label: todoLabel })
             });
 
             if (!response.ok) {
@@ -68,9 +68,11 @@ export default class App extends Component {
             }
 
             this.setState(
-                ({todoData}) => ({
-                    todoData: todoData.filter(({label}) => label !== todoLabel)
-                }),
+                ({ todoData }) => ({
+                    todoData: todoData.filter(
+                        ({ label }) => label !== todoLabel
+                    )
+                })
                 // () => {
                 //     alert(`Задача с label: ${todoLabel} удалена!`);
                 // }
@@ -95,7 +97,7 @@ export default class App extends Component {
                 headers: {
                     'content-type': 'application/json'
                 },
-                body: JSON.stringify({label})
+                body: JSON.stringify({ label })
             });
 
             if (!response.ok) {
@@ -104,23 +106,27 @@ export default class App extends Component {
                 );
             }
 
-            const {data: todo} = await response.json();
+            const { data: todo } = await response.json();
             // addTodoCallback(addedTodo); ← этого метода вообще нет.
-            this.setState(({todoData}) => ({
+            this.setState(({ todoData }) => ({
                 todoData: [todo, ...todoData]
             }));
         } catch (error) {
             console.error(error);
-            this.setState({error: error.message, messages: ''});
+            this.setState({ error: error.message, messages: '' });
         }
     };
 
     toggleProperty = async (arr, id, propName) => {
         try {
-
             const idx = arr.findIndex(el => el._id === id);
 
             const oldItem = arr[idx];
+
+            const newItem = {
+                ...oldItem,
+                [propName]: !oldItem[propName]
+            };
 
             const requestUrl = `${apiUrl}${apiRoutes.todo}`;
             const response = await fetch(requestUrl, {
@@ -128,7 +134,7 @@ export default class App extends Component {
                 headers: {
                     'content-type': 'application/json'
                 },
-                body: JSON.stringify({oldItem})
+                body: JSON.stringify(newItem) // ← тут ты не правильно передавал тело запроса
             });
 
             if (!response.ok) {
@@ -137,38 +143,47 @@ export default class App extends Component {
                 );
             }
 
-            const {data: todo} = await response.json();
+            // Этого делать не нужно так как тебе сервер в ответ кроме статуса
+            // Больше ничего не присылает
+            // const { data: todo } = await response.json();
 
             // addTodoCallback(addedTodo); ← этого метода вообще нет.
-            this.setState(({todoData}) => ({
-                todoData: [todo, ...todoData]
-            }));
-            const newItem = {
-                ...oldItem,
-                [propName]: !oldItem[propName]
-            };
+            // Этого вообще тут делать не нужно, так как ты стейт по своей логике менеяешь в другом месте.
+            // this.setState(({ todoData }) => ({
+            //     todoData: [oldItem, ...todoData]
+            // }));
 
-            return [...arr.slice(0, idx), newItem, ...arr.slice(idx + 1)];
+            // так делать очень херово
+            // тебе нужно вернуть новый туду, а уже что с ним делать ты должен решать за пределами этого метода
+            // так как ты нарушаешь принцип единичной ответственности
+            // return [...arr.slice(0, idx), newItem, ...arr.slice(idx + 1)];
+            return newItem;
         } catch (error) {
             console.error(error);
-            this.setState({error: error.message, messages: ''});
+            this.setState({ error: error.message, messages: '' });
         }
-    }
-
-    onToggleImportant = id => {
-        this.setState(({todoData}) => {
-            return {
-                todoData: this.toggleProperty(todoData, id, 'important')
-            };
-        });
     };
 
-    onToggleDone = id => {
-        this.setState(({todoData}) => {
-            return {
-                todoData: this.toggleProperty(todoData, id, 'done')
-            };
-        });
+    onToggleImportant = async id => {
+        const { todoData } = this.state;
+        const newItem = await this.toggleProperty(todoData, id, 'important');
+
+        // ты в массиве своих туду должен подменить задачу, обновлённой
+        this.setState(({ todoData }) => ({
+            todoData: todoData.map(todo =>
+                todo._id !== newItem._id ? todo : newItem
+            )
+        }));
+    };
+
+    onToggleDone = async id => {
+        const { todoData } = this.state;
+        const newItem = await this.toggleProperty(todoData, id, 'done');
+        this.setState(({ todoData }) => ({
+            todoData: todoData.map(todo =>
+                todo._id !== newItem._id ? todo : newItem
+            )
+        }));
     };
 
     search(items, term) {
@@ -177,12 +192,15 @@ export default class App extends Component {
         }
 
         return items.filter(item => {
-            return item.label.toLowerCase().indexOf(term.toLowerCase()) > -1;
+            return (
+                item.label &&
+                item.label.toLowerCase().indexOf(term.toLowerCase()) > -1
+            );
         });
     }
 
     onSearchChange = term => {
-        this.setState({term});
+        this.setState({ term });
     };
 
     filter(items, filter) {
@@ -199,11 +217,13 @@ export default class App extends Component {
     }
 
     onFilterChange = filter => {
-        this.setState({filter});
+        this.setState({ filter });
     };
 
     render() {
-        const {todoData, term, filter} = this.state;
+        const { todoData, term, filter } = this.state;
+
+        console.log(todoData);
 
         const visibleItems = this.filter(this.search(todoData, term), filter);
 
@@ -213,10 +233,10 @@ export default class App extends Component {
 
         return (
             <div className="todo-app">
-                <AppHeader toDo={todoCount} done={doneCount}/>
+                <AppHeader toDo={todoCount} done={doneCount} />
 
                 <div className="top-panel d-flex">
-                    <SearchPanel onSearchChange={this.onSearchChange}/>
+                    <SearchPanel onSearchChange={this.onSearchChange} />
                     <ItemStatusFilter
                         filter={filter}
                         onFilterChange={this.onFilterChange}
@@ -230,7 +250,7 @@ export default class App extends Component {
                     onToggleDone={this.onToggleDone}
                 />
 
-                <ItemAddForm onAddItem={this.onAddItem}/>
+                <ItemAddForm onAddItem={this.onAddItem} />
             </div>
         );
     }
