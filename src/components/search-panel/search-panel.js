@@ -3,13 +3,13 @@ import './search-panel.css'
 
 export default class SearchPanel extends Component {
 
-    state = {
-        term: ''
-    }
+    // state = {
+    //     term: ''
+    // }
 
     onSearchChange = (e) => {
         const term = e.target.value
-        this.setState({term})
+        // this.setState({term})
         this.props.onSearchChange(term)
     }
 
@@ -18,7 +18,7 @@ export default class SearchPanel extends Component {
             className='search-input'
             onChange={this.onSearchChange}
             placeholder='Поиск'
-            value={this.state.term}
+            value={this.props.term}
         />
     }
 }

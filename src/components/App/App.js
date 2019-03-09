@@ -78,7 +78,6 @@ export default class App extends Component {
                 // }
             );
         } catch (error) {
-            console.log('catch error');
             console.error(error);
         }
     };
@@ -109,7 +108,7 @@ export default class App extends Component {
             const { data: todo } = await response.json();
             // addTodoCallback(addedTodo); ← этого метода вообще нет.
             this.setState(({ todoData }) => ({
-                todoData: [todo, ...todoData]
+                todoData: [...todoData, todo]
             }));
         } catch (error) {
             console.error(error);
@@ -119,9 +118,15 @@ export default class App extends Component {
 
     toggleProperty = async (arr, id, propName) => {
         try {
-            const idx = arr.findIndex(el => el._id === id);
+            // const idx = arr.findIndex(el => el._id === id);
+            //
+            // const oldItem = arr[idx];
 
-            const oldItem = arr[idx];
+            const oldItem = arr.find(el => el._id === id);
+
+            if (!oldItem) {
+                return null;
+            }
 
             const newItem = {
                 ...oldItem,
@@ -187,7 +192,7 @@ export default class App extends Component {
     };
 
     search(items, term) {
-        if (term.length === '') {
+        if (!term) {
             return items;
         }
 
@@ -223,8 +228,6 @@ export default class App extends Component {
     render() {
         const { todoData, term, filter } = this.state;
 
-        console.log(todoData);
-
         const visibleItems = this.filter(this.search(todoData, term), filter);
 
         const doneCount = this.state.todoData.filter(el => el.done).length;
@@ -236,7 +239,8 @@ export default class App extends Component {
                 <AppHeader toDo={todoCount} done={doneCount} />
 
                 <div className="top-panel d-flex">
-                    <SearchPanel onSearchChange={this.onSearchChange} />
+                    <SearchPanel onSearchChange={this.onSearchChange}
+                                term = {term} />
                     <ItemStatusFilter
                         filter={filter}
                         onFilterChange={this.onFilterChange}
